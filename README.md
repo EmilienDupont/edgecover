@@ -1,7 +1,7 @@
 # Edge Cover
 An example of using Gurobi to compute a minimal edge cover
 
-![](screenshot.png?raw=true)
+![](screenshot2.png?raw=true)
 
 # Running the example
 
