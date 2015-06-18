@@ -8,19 +8,26 @@ edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)]
 
 def optimize(vertices, edges):
     m = Model()
-    vertexVars = {}
-
-    for v in vertices:
-        vertexVars[v] = m.addVar(vtype=GRB.BINARY,obj=1.0, name="x%d" % v)
-
-    m.update()
+    vertexIndicator = {}
+    edgeVars = {}
 
     for edge in edges:
-        u = edge[0]
-        v = edge[1]
-        xu = vertexVars[u]
-        xv = vertexVars[v]
-        m.addConstr(xu + xv >= 1, name="e%d-%d" % (u, v))
+        edgeVars[edge] = m.addVar(vtype=GRB.BINARY,obj=1.0)
+    
+    # Check if v is in edge e
+    for v in vertices:
+        for e in edges:
+            if e[0] == v or e[1] == v:
+                vertexIndicator[(e,v)] = 1
+            else:
+                vertexIndicator[(e,v)] = 0
+
+    m.update()
+    
+    m.setObjective(quicksum(edgeVars[edge] for edge in edges))
+
+    for v in vertices:
+        m.addConstr(quicksum(vertexIndicator[(e,v)]*edgeVars[e] for e in edges) >= 1)
 
     m.update()
     m.write('test.lp')
@@ -28,15 +35,10 @@ def optimize(vertices, edges):
 
     cover = []
 
-    for v in vertices:
-        if vertexVars[v].X > 0.5: # if value more than 1/2 must be 1 since binary
-            print 'Vertex', v, 'is in the cover'
-            cover.append(v)
-
     for edge in edges:
-        u = edge[0]
-        v = edge[1]
-        print 'Edge (%d, %d)' % (u, v), vertexVars[u].X, vertexVars[v].X
+        if edgeVars[edge].X > 0.5:
+            print 'Edge', edge, 'is in the cover'
+            cover.append(edge)
 
     return cover
 
