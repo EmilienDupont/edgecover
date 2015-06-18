@@ -268,10 +268,12 @@ function serverResponse(error, data) {
       if ('cover' in data) { // data is dict, should have a key cover
         var cover = data.cover;
         console.log('cover', cover);
-        d3.selectAll('.node') // execute function on each node
+        // !!!!!
+        // This is where I changed stuff, so this will probs go wrong
+        d3.selectAll('.links') // execute function on each node
           .each(function(d) {
                   var header = d3.select(this);
-                  if (cover.indexOf(d.index) > -1) { // if vertex is in cover color it red
+                  if (cover.indexOf(d.index) > -1) { // if edge is in cover color it red
                       header.style({'fill': 'red'});
                   } else {
                       header.style({'fill': 'black'});

@@ -3,14 +3,19 @@
 from gurobipy import *
 
 vertices  = range(5)
-edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)]
-
+edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)] # Maybe better to write this as list of lists (as this is what you will get from d3...)
 
 def optimize(vertices, edges):
     m = Model()
     vertexIndicator = {}
     edgeVars = {}
-
+    
+    # The input you get from the jsdict is a list of lists and not tuples
+    for i in range(0,len(edges)):
+        edges[i] = tuple(edges[i])
+    
+    print edges
+        
     for edge in edges:
         edgeVars[edge] = m.addVar(vtype=GRB.BINARY,obj=1.0)
     
