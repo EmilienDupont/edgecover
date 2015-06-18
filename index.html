@@ -270,14 +270,16 @@ function serverResponse(error, data) {
         console.log('cover', cover);
         // !!!!!
         // This is where I changed stuff, so this will probs go wrong
-        d3.selectAll('.links') // execute function on each node
+        // I checked the console log, cover is correct data      
+        d3.selectAll('.link') // execute function on each edge
           .each(function(d) {
                   var header = d3.select(this);
-                  if (cover.indexOf(d.index) > -1) { // if edge is in cover color it red
-                      header.style({'fill': 'red'});
-                  } else {
-                      header.style({'fill': 'black'});
-                  }
+                  //if (cover.indexOf(d.index) > -1) { // if edge is in cover color it red
+                      header.style({'stroke': 'red'});
+                      header.style({'stroke-width': 3});
+                  //} else {
+                      //header.style({'fill': 'black'});
+                  //}
                 });
       }
    }
