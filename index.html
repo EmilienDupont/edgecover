@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- Next lines for math/latex -->
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script>
+  MathJax.Hub.Config({
+                      tex2jax: {inlineMath: [['$', '$'], ['\\(','\\)']]},
+                      TeX: { equationNumbers: {autoNumber: "AMS"} },
+                      "HTML-CSS": { showMathMenu: false,
+                                    scale: 90 }
+
+                     });
+</script>
+
+<!-- Next lines for styling (CSS) -->
+<style>
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+.node {
+  fill: #000;
+}
+
+.cursor {
+  fill: none;
+  stroke: brown;
+  pointer-events: none;
+}
+
+.link {
+  stroke: #999;
+}
+
+</style>
+<!-- Next lines html -->
+<body>
+  <!-- Navigation -->
+  <ul id="nav">
+    <li class="current"><a href="#intro">Intro</a></li>
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#model">Model</a></li>
+    <li><a href="#implementation">Implementation</a></li>
+    <li><a href="#demo">Live Demo</a></li>
+  </ul>
+  <!--Set title and write stuff-->
+  <div id="container">
+    <div class="section" id="intro">
+      <h1>Edge Covering</h1>
+        <subtitle>with integer programming and Gurobi</subtitle>
+    </div>
+
+    <div class="section" id="problem">
+      <h2><a href="#problem" name="problem">Problem Description</a></h2>
+      Problem description goes here
+    </div>
+    <div class="section" id="model">
+      <h2><a href="#model" name="model">Mathematical Model</a></h2>
+
+      <p>Model description goes here.</p>
+
+<!-- We use tex with $ as usual-->
+      <p>Let $V$ be the set of vertices in our graph and $E$ the set of edges.
+      We are interested in computing a <i>edge cover</i>: a set of
+      vertices $C$ that cover all edges in the graph (i.e. so that each edge
+      in the graph is connected to at least one vertex in the cover).
+      </p>
+
+      <p> A minimal edge cover is one that uses the fewest vertices. We
+        will compute this with integer programming. </p>
+
+      <p>First we define the variables
+      <!-- Eq in [] -->
+      \[
+      x_v = \left\{\begin{array}{ll}
+             1 & \text{if  $v \in V$ is in the cover}\\
+             0 & \mathrm{otherwise}
+            \end{array}\right.
+      \]
+      </p>
+
+      <p>Then the following model can be solved to obtain a minimal edge cover
+      \[
+      \begin{array}{ll}
+      \text{minimize} & \sum_{v \in V} x_v \\
+      \text{subject to} & x_u + x_v \ge 1, \quad \forall (u,v) \in E \\
+                        & x_v \in \{ 0, 1 \} \quad \forall v \in E
+      \end{array}
+      \]
+      </p>
+
+      <p>Given an optimal solution $x^\star$ to the above model, we
+      know that a vertex $v$ will be in a minimal cover $C^\star$
+      if $x^\star_v = 1$. </p>
+<!-- implementation (gurobi code) -->
+    </div>
+    <div class="section" id="implementation">
+      <h2><a href="#implementation" name="implementation">Implementation</a></h2>
+      <p>Below is the full implementation of the model (and the associated data) in
+        Gurobi's Python interface:
+      </p>
+      <pre>
+        from gurobipy import *
+        vertices  = range(5)
+        edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)]
+
+        m = Model()
+        vertexVars = {}
+
+        for v in vertices:
+           vertexVars[v] = m.addVar(vtype=GRB.BINARY,obj=1.0, name="x%d" % v)
+
+        m.update()
+
+        for edge in edges:
+           u = edge[0]
+           v = edge[1]
+           xu = vertexVars[u]
+           xv = vertexVars[v]
+           m.addConstr(xu + xv >= 1, name="e%d-%d" % (u, v))
+
+        m.optimize()
+      </pre>
+    </div>
+    <div class="section" id="demo">
+      <h2><a href="#demo" name="demo">Live Demo</a></h2>
+      <!-- Where we put graphics -->
+      <div id="demoarea">
+      </div>
+      <!-- When button is clicked => calls compute() -->
+      <button onclick="compute()">Compute Edge Cover</button>
+    </div>
+
+    <!-- Load d3 library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<!-- After script, javascript -->
+<script>
+
+var width = 960,
+    height = 500;
+
+var fill = d3.scale.category20();
+
+var force = d3.layout.force()
+    .size([width, height])
+    .nodes([{}]) // initialize with a single node
+    .linkDistance(30)
+    .charge(-60)
+    .on("tick", tick);
+
+var svg = d3.select("#demoarea").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .on("mousemove", mousemove)
+    .on("mousedown", mousedown);
+
+svg.append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+var nodes = force.nodes(),
+    links = force.links(),
+    node = svg.selectAll(".node"),
+    link = svg.selectAll(".link");
+
+var cursor = svg.append("circle")
+    .attr("r", 30)
+    .attr("transform", "translate(-100,-100)")
+    .attr("class", "cursor");
+
+restart();
+
+function mousemove() {
+  cursor.attr("transform", "translate(" + d3.mouse(this) + ")");
+}
+
+function mousedown() {
+  var point = d3.mouse(this),
+      node = {x: point[0], y: point[1]},
+      n = nodes.push(node);
+
+  // add links to any nearby nodes
+  nodes.forEach(function(target) {
+    var x = target.x - node.x,
+        y = target.y - node.y;
+    if (Math.sqrt(x * x + y * y) < 30) {
+      links.push({source: node, target: target});
+    }
+  });
+
+  restart();
+}
+
+function tick() {
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
+
+function restart() {
+  link = link.data(links);
+
+  link.enter().insert("line", ".node")
+      .attr("class", "link");
+
+  node = node.data(nodes);
+
+  node.enter().insert("circle", ".cursor")
+      .attr("class", "node")
+      .attr("r", 5)
+      .call(force.drag);
+
+  force.start();
+}
+// All above lines come from a d3 example (mbostock)
+function compute() {
+  var vertices = [];
+  var edges    = [];
+  var edge;
+  for (var i = 0; i < nodes.length; i++) {
+     vertices.push(nodes[i].index);
+  }
+  for (i = 0; i < links.length; i++) {
+     edge = links[i];
+     if (edge.source.index !== edge.target.index) {
+       edges.push([edge.source.index, edge.target.index]);
+     }
+  }
+  console.log('vertices', vertices); // write out to the log (like print)
+  console.log('edges', edges);
+
+  d3.json('/resource') // using json (javascript format) function to send stuff to /resource page
+    .header('Content-Type', 'application/json')
+    .post(JSON.stringify({'vertices': vertices,
+                          'edges': edges }), serverResponse); // Send dictionary with vertices and edges (arrays are values)
+} //When servers respond call serverResponse function
+
+function serverResponse(error, data) {
+   console.log('serverResponse');
+   console.log('data', data); // Print out data
+   if (!error) { // error = 0 => everything okay
+      if ('cover' in data) { // data is dict, should have a key cover
+        var cover = data.cover;
+        console.log('cover', cover);
+        d3.selectAll('.node') // execute function on each node
+          .each(function(d) {
+                  var header = d3.select(this);
+                  if (cover.indexOf(d.index) > -1) { // if vertex is in cover color it red
+                      header.style({'fill': 'red'});
+                  } else {
+                      header.style({'fill': 'black'});
+                  }
+                });
+      }
+   }
+}
+
+</script>
