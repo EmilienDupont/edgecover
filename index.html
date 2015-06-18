@@ -261,6 +261,21 @@ function compute() {
                           'edges': edges }), serverResponse); // Send dictionary with vertices and edges (arrays are values)
 } //When servers respond call serverResponse function
 
+function inArray (array, edge) {
+  var u = edge[0];
+  var v = edge[1];
+  var bool = false;
+  for (i = 0; i < array.length; i++) {
+    edgeprime = array[i];
+    if (u === edgeprime[0] && v === edgeprime[1]) {
+      bool = true;
+      break;
+    }
+  }
+  return bool;
+}
+
+
 function serverResponse(error, data) {
    console.log('serverResponse');
    console.log('data', data); // Print out data
@@ -268,18 +283,41 @@ function serverResponse(error, data) {
       if ('cover' in data) { // data is dict, should have a key cover
         var cover = data.cover;
         console.log('cover', cover);
+        
+        
+        //console.log('cover[0]', cover[0]);
+        //console.log('links', links);
         // !!!!!
         // This is where I changed stuff, so this will probs go wrong
-        // I checked the console log, cover is correct data      
+        // I checked the console log, cover is correct data
+        //var cover_all = [];
+        //for (i = 0; i< cover.length; i++) {
+        //  cover_all.push(cover[i])
+        //}
+        //console.log('cover_all', cover_all)
+        
+        
         d3.selectAll('.link') // execute function on each edge
           .each(function(d) {
                   var header = d3.select(this);
-                  //if (cover.indexOf(d.index) > -1) { // if edge is in cover color it red
+                  
+                  // Convert to array with the index as the number corresponding to a vertex
+                  // (this also adds links (1,1), (2,2) etc but this wont affect it, as they will not be in cover)
+                  
+                  
+                  var d_arr = Object.keys(d).map(function (key) {return Number(d[key].index)});
+                  console.log('d_arr', d_arr );
+                  console.log('Is it in array?', cover.indexOf(d_arr) );
+                  
+                  //if (cover_all.indexOf(d_arr) > -1) { // if edge is in cover color it red
+                  
+                  
+                  if (inArray(cover, d_arr)) {
                       header.style({'stroke': 'red'});
                       header.style({'stroke-width': 3});
                   //} else {
                       //header.style({'fill': 'black'});
-                  //}
+                  }
                 });
       }
    }
