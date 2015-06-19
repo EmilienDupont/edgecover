@@ -3,36 +3,29 @@
 from gurobipy import *
 
 vertices  = range(5)
-edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)] # Maybe better to write this as list of lists (as this is what you will get from d3...)
+edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)]
 
 def optimize(vertices, edges):
     m = Model()
-    vertexIndicator = {}
+    edgeIn   = { v:[] for v in vertices }
+    edgeOut  = { v:[] for v in vertices }
     edgeVars = {}
-    
-    # The input you get from the jsdict is a list of lists and not tuples
-    for i in range(0,len(edges)):
-        edges[i] = tuple(edges[i])
-    
-    print edges
-        
+
+    edges = [ tuple(e) for e in edges ]
+    print 'edges', edges
+
     for edge in edges:
-        edgeVars[edge] = m.addVar(vtype=GRB.BINARY,obj=1.0)
-    
-    # Check if v is in edge e
-    for v in vertices:
-        for e in edges:
-            if e[0] == v or e[1] == v:
-                vertexIndicator[(e,v)] = 1
-            else:
-                vertexIndicator[(e,v)] = 0
+        u = edge[0]
+        v = edge[1]
+        xe  = m.addVar(vtype=GRB.BINARY,obj=1.0, name="x_%d_%d" % (u,v))
+        edgeVars[edge] = xe
+        edgeOut[u] = edgeOut[u] + [xe]
+        edgeIn[v] = edgeIn[v] + [xe]
 
     m.update()
-    
-    m.setObjective(quicksum(edgeVars[edge] for edge in edges))
 
     for v in vertices:
-        m.addConstr(quicksum(vertexIndicator[(e,v)]*edgeVars[e] for e in edges) >= 1)
+        m.addConstr(quicksum(edgeOut[v]) + quicksum(edgeIn[v]) >= 1, name="v%d" % v)
 
     m.update()
     m.write('test.lp')
