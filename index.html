@@ -81,22 +81,12 @@ rect {
             \end{array}\right.
       \]
       </p>
-      
-      <p>We also define the indicators
-      <!-- Eq in [] -->
-      \[
-      y_{ve} = \left\{\begin{array}{ll}
-             1 & \text{if  $v \in e$ i.e. if v is in edge $e$}\\
-             0 & \mathrm{otherwise}
-            \end{array}\right.
-      \]
-      </p>
 
       <p>Then the following model can be solved to obtain a minimal edge cover
       \[
       \begin{array}{ll}
       \text{minimize} & \sum_{e \in E} x_e \\
-      \text{subject to} & \sum_{e \in E} y_{ve} x_e \ge 1, \quad \forall v \in V \\
+      \text{subject to} & \sum_{(u,v)=e \in E} x_e + \sum_{(v,u)=e \in E} x_e \ge 1, \quad \forall v \in V \\
                         & x_e \in \{ 0, 1 \} \quad \forall e \in E
       \end{array}
       \]
@@ -119,29 +109,24 @@ rect {
         edges     = [(0, 1), (1, 2), (3, 4), (0, 2), (1, 3)]
 
         m = Model()
-        vertexIndicator = {}
+        edgeIn   = { v:[] for v in vertices }
+        edgeOut  = { v:[] for v in vertices }
         edgeVars = {}
 
         for edge in edges:
-          edgeVars[edge] = m.addVar(vtype=GRB.BINARY,obj=1.0)
-    
-        # Check if v is in edge e
-        for v in vertices:
-          for e in edges:
-            if e[0] == v or e[1] == v:
-                vertexIndicator[(e,v)] = 1
-            else:
-                vertexIndicator[(e,v)] = 0
+           u = edge[0]
+           v = edge[1]
+           xe  = m.addVar(vtype=GRB.BINARY,obj=1.0, name="x_%d_%d" % (u,v))
+           edgeVars[edge] = xe
+           edgeOut[u] = edgeOut[u] + [xe]
+           edgeIn[v] = edgeIn[v] + [xe]
 
         m.update()
-    
-        m.setObjective(quicksum(edgeVars[edge] for edge in edges))
-    
-        for v in vertices:
-            m.addConstr(quicksum(vertexIndicator[(e,v)]*edgeVars[e] for e in edges) >= 1)
-    
-        m.optimize()
 
+        for v in vertices:
+           m.addConstr(quicksum(edgeOut[v]) + quicksum(edgeIn[v]) >= 1, name="v%d" % v)
+
+        m.optimize()
       </pre>
     </div>
     <div class="section" id="demo">
@@ -282,17 +267,20 @@ function serverResponse(error, data) {
    if (!error) { // error = 0 => everything okay
       if ('cover' in data) { // data is dict, should have a key cover
         var cover = data.cover;
-        console.log('cover', cover);      
+        console.log('cover', cover);
         d3.selectAll('.link') // execute function on each edge
         .each(function(d) {
                   var header = d3.select(this);
                   // Convert to array with the index as the number corresponding to a vertex
                   // (this also adds links (1,1), (2,2) etc but this wont affect it, as they will not be in cover)
                   var d_arr = Object.keys(d).map(function (key) {return Number(d[key].index)});
-                
+
                   if (inArray(cover, d_arr)) { // if edge is in cover color it red
                       header.style({'stroke': 'red'});
                       header.style({'stroke-width': 3});
+                  } else {
+                      header.style({'stroke': '#999'});
+                      header.style({'stroke-width': 1});
                   }
         });
       }
