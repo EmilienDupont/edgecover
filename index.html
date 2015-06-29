@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<!-- Next lines for math/latex -->
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 <script>
@@ -13,7 +12,6 @@
                      });
 </script>
 
-<!-- Next lines for styling (CSS) -->
 <style>
 
 rect {
@@ -36,9 +34,7 @@ rect {
 }
 
 </style>
-<!-- Next lines html -->
 <body>
-  <!-- Navigation -->
   <ul id="nav">
     <li class="current"><a href="#intro">Intro</a></li>
     <li><a href="#problem">Problem</a></li>
@@ -46,7 +42,6 @@ rect {
     <li><a href="#implementation">Implementation</a></li>
     <li><a href="#demo">Live Demo</a></li>
   </ul>
-  <!--Set title and write stuff-->
   <div id="container">
     <div class="section" id="intro">
       <h1>Edge Covering</h1>
@@ -62,7 +57,6 @@ rect {
 
       <p>Model description goes here.</p>
 
-<!-- We use tex with $ as usual-->
       <p>Let $V$ be the set of vertices in our graph and $E$ the set of edges.
       We are interested in computing an <i>edge cover</i>: a set of
       edges $C$ that cover all vertices in the graph (i.e. so that each vertex
@@ -73,7 +67,6 @@ rect {
         will compute this with integer programming. </p>
 
       <p>First we define the variables
-      <!-- Eq in [] -->
       \[
       x_e = \left\{\begin{array}{ll}
              1 & \text{if  $e \in E$ is in the cover}\\
@@ -95,7 +88,6 @@ rect {
       <p>Given an optimal solution $x^\star$ to the above model, we
       know that an edge $e$ will be in a minimal cover $C^\star$
       if $x^\star_e = 1$. </p>
-<!-- implementation (gurobi code) -->
     </div>
     <div class="section" id="implementation">
       <h2><a href="#implementation" name="implementation">Implementation</a></h2>
@@ -131,16 +123,12 @@ rect {
     </div>
     <div class="section" id="demo">
       <h2><a href="#demo" name="demo">Live Demo</a></h2>
-      <!-- Where we put graphics -->
       <div id="demoarea">
       </div>
-      <!-- When button is clicked => calls compute() -->
       <button onclick="compute()">Compute Edge Cover</button>
     </div>
 
-    <!-- Load d3 library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-<!-- After script, javascript -->
 <script>
 
 var width = 960,
@@ -223,7 +211,8 @@ function restart() {
 
   force.start();
 }
-// All above lines come from a d3 example (mbostock)
+
+
 function compute() {
   var vertices = [];
   var edges    = [];
@@ -237,14 +226,15 @@ function compute() {
        edges.push([edge.source.index, edge.target.index]);
      }
   }
-  console.log('vertices', vertices); // write out to the log (like print)
+  console.log('vertices', vertices);
   console.log('edges', edges);
 
-  d3.json('/resource') // using json (javascript format) function to send stuff to /resource page
+  d3.json('/resource')
     .header('Content-Type', 'application/json')
     .post(JSON.stringify({'vertices': vertices,
-                          'edges': edges }), serverResponse); // Send dictionary with vertices and edges (arrays are values)
-} //When servers respond call serverResponse function
+                          'edges': edges }), serverResponse);
+}
+
 
 function inArray (array, edge) {
   var u = edge[0];
@@ -263,16 +253,16 @@ function inArray (array, edge) {
 
 function serverResponse(error, data) {
    console.log('serverResponse');
-   console.log('data', data); // Print out data
-   if (!error) { // error = 0 => everything okay
-      if ('cover' in data) { // data is dict, should have a key cover
+   console.log('data', data);
+   if (!error) {
+      if ('cover' in data) {
         var cover = data.cover;
         console.log('cover', cover);
         d3.selectAll('.link') // execute function on each edge
         .each(function(d) {
                   var header = d3.select(this);
                   // Convert to array with the index as the number corresponding to a vertex
-                  // (this also adds links (1,1), (2,2) etc but this wont affect it, as they will not be in cover)
+                  // (this also adds links (1,1), (2,2) etc but this will not affect cover
                   var d_arr = Object.keys(d).map(function (key) {return Number(d[key].index)});
 
                   if (inArray(cover, d_arr)) { // if edge is in cover color it red
