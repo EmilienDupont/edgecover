@@ -229,7 +229,7 @@ function compute() {
   console.log('vertices', vertices);
   console.log('edges', edges);
 
-  d3.json('/resource')
+  d3.json('/edgecover')
     .header('Content-Type', 'application/json')
     .post(JSON.stringify({'vertices': vertices,
                           'edges': edges }), serverResponse);
